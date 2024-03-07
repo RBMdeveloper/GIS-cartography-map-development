@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAJA map data analysis</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <!-- Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <!-- Styling for map container -->
+    <style>
+        #map {
+            width: 100%;
+            height: 350px; /* Adjust the height as needed */
+        }
+        .color-control {
+            margin-top: 10px;
+        }
+        .state-input {
+            margin-bottom: 5px;
+        }
+        .range-input {
+            margin-bottom: 5px;
+        }
+        footer{
+            background-color: black;
+            color: white;
+            margin-top: 50px;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <div class="color-control">
+        <div id="state-inputs">
+            <!-- Input fields for state populations -->
+            <div class="state-input">
+                <label for="assam-population">Assam Population:</label>
+                <input type="number" id="assam-population" class="population-input" value="100000">
+            </div>
+            <div class="state-input">
+                <label for="arunachal-population">Arunachal Pradesh Population:</label>
+                <input type="number" id="arunachal-population" class="population-input" value="100000">
+            </div>
+            <div class="state-input">
+                <label for="meghalaya-population">Meghalaya Population:</label>
+                <input type="number" id="meghalaya-population" class="population-input" value="100000">
+            </div>
+            <div class="state-input">
+                <label for="nagaland-population">Nagaland Population:</label>
+                <input type="number" id="nagaland-population" class="population-input" value="100000">
+            </div>
+            <div class="state-input">
+                <label for="mizoram-population">Mizoram Population:</label>
+                <input type="number" id="mizoram-population" class="population-input" value="100000">
+            </div>
+            <div class="state-input">
+                <label for="manipur-population">Manipur Population:</label>
+                <input type="number" id="manipur-population" class="population-input" value="100000">
+            </div>
+            <div class="state-input">
+                <label for="tripura-population">Tripura Population:</label>
+                <input type="number" id="tripura-population" class="population-input" value="100000">
+            </div>
+            <!-- Add input fields for other states as needed -->
+        </div>
+        <div id="range-inputs">
+            <!-- Input fields for population ranges -->
+            <div class="range-input">
+                <label for="range1-max">Range 1 (Below 1 lakh):</label>
+                <input type="number" id="range1-max" class="range-max-input" value="100000">
+                <input type="color" id="range1-color" class="range-color-input" value="#FFFF00">
+            </div>
+            <div class="range-input">
+                <label for="range2-max">Range 2 (1 to 5 lakh):</label>
+                <input type="number" id="range2-max" class="range-max-input" value="500000">
+                <input type="color" id="range2-color" class="range-color-input" value="#FFA500">
+            </div>
+            <div class="range-input">
+                <label for="range3-max">Range 3 (Above 5 lakh):</label>
+                <input type="number" id="range3-max" class="range-max-input" value="500000">
+                <input type="color" id="range3-color" class="range-color-input" value="#FF0000">
+            </div>
+            <!-- Add input fields for additional ranges as needed -->
+        </div>
+        <!-- Add button to apply changes -->
+        <button onclick="applyChanges()">Apply Changes</button>
+    </div>
+
+    <footer><center>The app is under development , this is an beta version for testing , developed By Raja Babu Mahato <br>
+
+    ©RBMtechnology</center></footer>
+
+    <script>
+        var map = L.map('map').setView([27.0, 94.0], 7);
+        var geojsonLayer;
+
+        // Load GeoJSON data from file and add to map with default style
+        fetch('northeast_map.geojson')
+            .then(response => response.json())
+            .then(data => {
+                // Create GeoJSON layer and add to map
+                geojsonLayer = L.geoJSON(data).addTo(map);
+            })
+            .catch(error => {
+                console.error('Error loading GeoJSON file:', error);
+            });
+
+        function applyChanges() {
+            // Get population inputs
+            var populationInputs = document.getElementsByClassName('population-input');
+            var populations = {};
+            for (var i = 0; i < populationInputs.length; i++) {
+                var state = populationInputs[i].id.split('-')[0]; // Extract state name from input ID
+                populations[state] = parseInt(populationInputs[i].value);
+            }
+
+            // Get range inputs
+            var rangeInputs = document.getElementsByClassName('range-input');
+            var ranges = [];
+            for (var i = 0; i < rangeInputs.length; i++) {
+                var maxPopulation = parseInt(rangeInputs[i].querySelector('.range-max-input').value);
+                var color = rangeInputs[i].querySelector('.range-color-input').value;
+                ranges.push({ maxPopulation: maxPopulation, color: color });
+            }
+
+            // Update colors based on population and ranges
+            geojsonLayer.eachLayer(function(layer) {
+                var population = populations[layer.feature.properties.ST_NM.toLowerCase()];
+                var fillColor = getColor(population, ranges);
+                layer.setStyle({ fillColor: fillColor });
+            });
+        }
+
+        // Function to get color based on population and ranges
+        function getColor(population, ranges) {
+            for (var i = 0; i < ranges.length; i++) {
+                if (population <= ranges[i].maxPopulation) {
+                    return ranges[i].color;
+                }
+            }
+        }
+    </script>
+</body>
+</html>
